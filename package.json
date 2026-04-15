@@ -1,0 +1,102 @@
+{
+  "name": "@omnixys/security",
+  "version": "0.1.0",
+  "description": "Enterprise-grade security module for Omnixys microservices. Provides authentication (JWT/Keycloak), JWE encryption, session handling, role-based access control, rate limiting, and hashing utilities.",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.js"
+    },
+    "./auth": {
+      "import": "./dist/auth/index.js",
+      "types": "./dist/auth/index.d.ts"
+    },
+    "./jwe": {
+      "import": "./dist/jwe/index.js",
+      "types": "./dist/jwe/index.d.ts"
+    }
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
+  },
+  "private": false,
+  "packageManager": "pnpm@10.33.0",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "clean": "rimraf dist",
+    "build:tsup": "tsup src/index.ts --format esm,cjs --dts",
+    "patch": "pnpm version patch",
+    "dev": "tsc -w",
+    "release": "semantic-release",
+    "format": "prettier --cache --write \"src/**/*.{ts,js,json,prisma,md,yaml}\""
+  },
+  "keywords": [
+    "omnixys",
+    "security",
+    "nestjs",
+    "jwt",
+    "jwe",
+    "keycloak",
+    "rbac",
+    "session-management",
+    "access-control",
+    "authentication",
+    "authorization",
+    "token-management",
+    "oauth2",
+    "openid-connect",
+    "sso",
+    "password-hashing",
+    "bcrypt",
+    "encryption",
+    "rate-limit",
+    "hashing"
+  ],
+  "author": "Omnixys Technologies",
+  "license": "GPL-3.0-or-later",
+  "devDependencies": {
+    "@nestjs/common": "^11.1.17",
+    "@nestjs/core": "^11.1.17",
+    "@nestjs/graphql": "^13.2.4",
+    "@omnixys/context": "^1.0.0",
+    "@omnixys/observability": "^1.0.0",
+    "@omnixys/shared": "^1.0.0",
+    "@swc/core": "^1.15.21",
+    "@types/bcrypt": "^6.0.0",
+    "@types/node": "^25.5.0",
+    "@types/passport-jwt": "^4.0.1",
+    "fastify": "^5.8.4",
+    "prettier": "^3.8.1",
+    "prettier-plugin-organize-imports": "^4.3.0",
+    "prettier-plugin-sort-imports": "^1.8.11",
+    "tsup": "^8.5.1"
+  },
+  "peerDependencies": {
+    "@nestjs/common": "^10 || ^11",
+    "@nestjs/core": "^10 || ^11",
+    "@nestjs/graphql": "^13.2.4",
+    "@omnixys/context": "^1.0.0",
+    "@omnixys/observability": "^1.0.0",
+    "@omnixys/shared": "^1.0.0",
+    "fastify": "^5.8.4",
+    "reflect-metadata": "^0.1"
+  },
+  "dependencies": {
+    "@nestjs/axios": "^4.0.1",
+    "@nestjs/jwt": "^11.0.2",
+    "@nestjs/passport": "^11.0.5",
+    "argon2": "^0.44.0",
+    "jose": "^6.2.2",
+    "jwks-rsa": "^4.0.1",
+    "passport-jwt": "^4.0.1",
+    "rxjs": "^7.8.2"
+  }
+}
