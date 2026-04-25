@@ -1,9 +1,16 @@
 import { RiskMemoryStore } from './risk-memory.store.js';
 import { Inject, Injectable, Optional, Type } from '@nestjs/common';
 
+export interface StepUpContext {
+  ip?: string;
+  deviceId?: string;
+  userAgent?: string;
+}
+
 @Injectable()
 export class RiskMemoryService {
-  private readonly ttlSeconds = 900;
+  private readonly ttlSeconds = 900; // failures TTL (15 min)
+  private readonly stepUpTtlSeconds = 600; // step-up trust window (10 min)
 
   constructor(
     @Optional()
@@ -34,5 +41,79 @@ export class RiskMemoryService {
 
   async getLastIp(userId: string): Promise<string | null> {
     return this.cache.get(`risk:user:${userId}:last-ip`);
+  }
+
+  /**
+   * Marks that a user has successfully completed a step-up verification
+   * (e.g., TOTP, WebAuthn).
+   *
+   * This creates a short-lived trust window bound to context (IP + device).
+   */
+  async markStepUpVerified(userId: string, context: StepUpContext): Promise<void> {
+    const key = this.buildStepUpKey(userId, context);
+
+    const payload = {
+      verifiedAt: Date.now(),
+      ip: context.ip,
+      deviceId: context.deviceId,
+      userAgent: context.userAgent,
+    };
+
+    await this.cache.set(key, JSON.stringify(payload), {
+      EX: this.stepUpTtlSeconds,
+    });
+  }
+
+  /**
+   * Checks whether a valid step-up verification exists for the given context.
+   */
+  async isStepUpValid(userId: string, context: StepUpContext): Promise<boolean> {
+    const key = this.buildStepUpKey(userId, context);
+    const raw = await this.cache.get(key);
+
+    if (!raw) {
+      return false;
+    }
+
+    try {
+      const data = JSON.parse(raw) as {
+        ip?: string;
+        deviceId?: string;
+      };
+
+      // Optional: strict matching
+      if (data.ip && context.ip && data.ip !== context.ip) {
+        return false;
+      }
+
+      if (data.deviceId && context.deviceId && data.deviceId !== context.deviceId) {
+        return false;
+      }
+
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  /**
+   * Optional: clear step-up state manually
+   */
+  async clearStepUp(userId: string, context: StepUpContext): Promise<void> {
+    const key = this.buildStepUpKey(userId, context);
+    await this.cache.del(key);
+  }
+
+  /**
+   * Internal key builder
+   *
+   * IMPORTANT:
+   * We bind trust to user + device + ip → Zero Trust compliant
+   */
+  private buildStepUpKey(userId: string, context: StepUpContext): string {
+    const device = context.deviceId ?? 'unknown-device';
+    const ip = context.ip ?? 'unknown-ip';
+
+    return `risk:user:${userId}:stepup:${device}:${ip}`;
   }
 }

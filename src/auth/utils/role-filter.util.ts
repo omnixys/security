@@ -12,6 +12,19 @@ const IGNORED_KEYCLOAK_ROLES = new Set([
   'Default user role',
 ]);
 
+export function resolvePrimaryRole(roles: RealmRoleType[]): RealmRoleType | undefined {
+  const priority = [
+    RealmRoleType.ADMIN,
+    RealmRoleType.USER,
+    RealmRoleType.SUPREME,
+    RealmRoleType.ELITE,
+    RealmRoleType.BASIC,
+    RealmRoleType.GUEST,
+  ];
+
+  return priority.find((p) => roles.includes(p));
+}
+
 /**
  * Filters Keycloak technical roles and returns only business-relevant roles.
  *
