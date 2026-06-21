@@ -1,11 +1,13 @@
 import {
   GeoIpService,
+  RateLimitExceededException,
   RateLimitService,
   RiskMemoryService,
   SecureSessionService,
   SessionExpiredException,
   ZeroTrustModule,
 } from '../dist/index.js';
+import { ContextAccessor } from '@omnixys/context';
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { throwError } from 'rxjs';
@@ -134,6 +136,24 @@ test('rate limiting reports remaining capacity and retry timing', async () => {
   assert.equal(denied.allowed, false);
   assert.equal(denied.retryAfterSeconds, 7);
   assert.equal(denied.remaining, 0);
+});
+
+test('rate-limit errors retain the compatibility response and canonical diagnostics', () => {
+  ContextAccessor.run(
+    { requestId: 'request-rate', correlationId: 'correlation-rate' },
+    () => {
+      const error = new RateLimitExceededException({ retryAfterSeconds: 7 });
+      const response = error.getResponse();
+
+      assert.equal(error.getStatus(), 429);
+      assert.equal(error.code, 'RATE_LIMIT_EXCEEDED');
+      assert.equal(error.requestId, 'request-rate');
+      assert.equal(error.correlationId, 'correlation-rate');
+      assert.equal(response.retryAfter, 7);
+      assert.equal(response.requestId, 'request-rate');
+      assert.deepEqual(response.metadata, { retryAfterSeconds: 7 });
+    },
+  );
 });
 
 test('localhost GeoIP never fabricates production location metadata', async () => {

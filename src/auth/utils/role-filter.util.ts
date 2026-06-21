@@ -1,4 +1,4 @@
-import { RealmRoleType } from '@omnixys/shared';
+import { RealmRoleType } from '@omnixys/contracts';
 
 /**
  * Keycloak technical roles that should be ignored.

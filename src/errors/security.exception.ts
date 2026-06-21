@@ -1,4 +1,9 @@
-import { ForbiddenException, UnauthorizedException } from '@nestjs/common';
+import {
+  ForbiddenException,
+  HttpException,
+  HttpStatus,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { ContextAccessor } from '@omnixys/context';
 
 export interface SecurityErrorContext {
@@ -90,6 +95,40 @@ export class SessionExpiredException extends UnauthorizedException {
   ) {
     const details = errorDetails('SESSION_EXPIRED', message, metadata);
     super(details);
+    Object.assign(this, details);
+  }
+}
+
+export interface RateLimitExceededOptions {
+  readonly retryAfterSeconds?: number;
+  readonly message?: string;
+}
+
+export class RateLimitExceededException extends HttpException {
+  readonly code = 'RATE_LIMIT_EXCEEDED';
+  readonly requestId!: string;
+  readonly correlationId!: string;
+  readonly traceId?: string;
+  readonly actorId?: string;
+  readonly tenantId?: string;
+  readonly metadata!: SecurityErrorMetadata;
+  readonly retryAfterSeconds: number;
+
+  constructor({
+    retryAfterSeconds = 3600,
+    message = 'Too many requests',
+  }: RateLimitExceededOptions = {}) {
+    const details = errorDetails('RATE_LIMIT_EXCEEDED', message, {
+      retryAfterSeconds,
+    });
+    super(
+      {
+        ...details,
+        retryAfter: retryAfterSeconds,
+      },
+      HttpStatus.TOO_MANY_REQUESTS,
+    );
+    this.retryAfterSeconds = retryAfterSeconds;
     Object.assign(this, details);
   }
 }

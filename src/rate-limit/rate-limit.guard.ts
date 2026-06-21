@@ -1,8 +1,8 @@
 import { RateLimitService } from './rate-limit.service.js';
+import { RateLimitExceededException } from '../errors/security.exception.js';
 import { Injectable, CanActivate, ExecutionContext } from '@nestjs/common';
 import { GqlExecutionContext } from '@nestjs/graphql';
 import { getIp } from '@omnixys/context';
-import { TooManyRequestsException } from '@omnixys/shared';
 
 @Injectable()
 export class RateLimitGuard implements CanActivate {
@@ -16,7 +16,7 @@ export class RateLimitGuard implements CanActivate {
     const allowed = await this.rateLimit.isAllowed(key);
 
     if (allowed.allowed === false) {
-      throw new TooManyRequestsException({
+      throw new RateLimitExceededException({
         message: 'Too many requests. Please try again later.',
         retryAfterSeconds: allowed.retryAfterSeconds,
       });

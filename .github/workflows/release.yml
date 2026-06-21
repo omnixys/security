@@ -27,11 +27,10 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Setup npm auth
+      - name: Setup npm registry auth
         run: |
           echo "@omnixys:registry=https://npm.pkg.github.com" >> .npmrc
           echo "//npm.pkg.github.com/:_authToken=${OMNIXYS_TOKEN}" >> .npmrc
-          echo "always-auth=true" >> .npmrc
         env:
           OMNIXYS_TOKEN: ${{ secrets.OMNIXYS_TOKEN }}
 

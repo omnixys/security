@@ -1,5 +1,5 @@
 import { filterRelevantRoles } from './role-filter.util.js';
-import type { KeycloakRawOutput, RealmRoleType } from '@omnixys/shared';
+import type { KeycloakRawOutput, RealmRoleType } from '@omnixys/contracts';
 
 /**
  * Extracts all roles from a raw Keycloak JWT payload:
