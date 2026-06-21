@@ -14,7 +14,7 @@ export class CookieService {
       secure: this.options.cookie?.secure ?? true,
       sameSite: this.options.cookie?.sameSite ?? 'none',
       domain: this.options.cookie?.domain,
-      path: '/',
+      path: this.options.cookie?.path ?? '/',
     };
   }
 }

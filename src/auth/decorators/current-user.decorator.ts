@@ -30,7 +30,7 @@ export const CurrentUser = createParamDecorator(
     const userInfo = user.raw;
 
     const roles = extractUserRoles(user.raw);
-      const role = resolvePrimaryRole(roles);
+    const role = resolvePrimaryRole(roles);
 
     return {
       id: user.sub ?? userInfo.sub,

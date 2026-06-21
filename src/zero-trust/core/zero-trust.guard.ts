@@ -3,34 +3,65 @@ import {
   StepUpRequiredException,
 } from '../error/zero-trust.exception.js';
 import { ZeroTrustService } from './zero-trust.service.js';
-import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
-import { getRequest } from '@omnixys/context';
+import {
+  CanActivate,
+  ExecutionContext,
+  Injectable,
+  Optional,
+} from '@nestjs/common';
+import { ContextAccessor, getRequest } from '@omnixys/context';
+import { OmnixysLogger } from '@omnixys/logger';
 
 @Injectable()
 export class ZeroTrustGuard implements CanActivate {
-  constructor(private readonly zeroTrust: ZeroTrustService) {}
+  constructor(
+    private readonly zeroTrust: ZeroTrustService,
+    @Optional() private readonly logger?: OmnixysLogger,
+  ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const req = getRequest(context);
     const user = req.user;
+    const canonical = ContextAccessor.get();
 
-    if (!user) return false;
+    if (!user) {
+      this.logger
+        ?.child(ZeroTrustGuard.name)
+        .warn('Zero-trust evaluation denied', {
+          reason: 'unauthenticated',
+        });
+      return false;
+    }
 
     const result = await this.zeroTrust.evaluate({
-      userId: user.id,
-      ip: req.ip,
-      userAgent: req.headers['user-agent'],
-      acceptLanguage: req.headers['accept-language'],
-      clientDeviceId: req.cookies?.device_id,
+      userId: canonical?.principal?.userId ?? user.id,
+      ip: canonical?.client.ip ?? req.ip,
+      userAgent: canonical?.client.userAgent ?? req.headers['user-agent'],
+      acceptLanguage:
+        canonical?.client.locale ?? req.headers['accept-language'],
+      clientDeviceId: canonical?.client.deviceId ?? req.cookies?.device_id,
       isPasswordless: false,
       isResetFlow: false,
     });
 
     if (result.decision === 'BLOCK') {
+      this.logger
+        ?.child(ZeroTrustGuard.name)
+        .warn('Zero-trust access blocked', {
+          reasons: result.reasons,
+          riskScore: result.score,
+        });
       throw new AccessBlockedException(result.reasons);
     }
 
     if (result.decision === 'STEP_UP') {
+      this.logger
+        ?.child(ZeroTrustGuard.name)
+        .warn('Zero-trust step-up required', {
+          method: result.stepUp,
+          reasons: result.reasons,
+          riskScore: result.score,
+        });
       throw new StepUpRequiredException(result.stepUp!, result.reasons);
     }
 

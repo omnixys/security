@@ -1,5 +1,5 @@
 import { RiskMemoryStore } from './risk-memory.store.js';
-import { Inject, Injectable, Optional, Type } from '@nestjs/common';
+import { Inject, Injectable, Optional } from '@nestjs/common';
 
 export interface StepUpContext {
   ip?: string;
@@ -15,10 +15,11 @@ export class RiskMemoryService {
   constructor(
     @Optional()
     @Inject('RISK_MEMORY_STORE')
-    readonly cache: RiskMemoryStore,
+    readonly cache?: RiskMemoryStore,
   ) {}
 
   async incrementFailures(userId: string): Promise<number> {
+    if (!this.cache) return 0;
     const key = `risk:user:${userId}:failures`;
     const count = await this.cache.incr(key);
     await this.cache.expire(key, this.ttlSeconds);
@@ -26,21 +27,24 @@ export class RiskMemoryService {
   }
 
   async getFailures(userId: string): Promise<number> {
+    if (!this.cache) return 0;
     const key = `risk:user:${userId}:failures`;
     const value = await this.cache.get(key);
     return value ? Number(value) : 0;
   }
 
   async resetFailures(userId: string): Promise<void> {
+    if (!this.cache) return;
     await this.cache.del(`risk:user:${userId}:failures`);
   }
 
   async storeLastIp(userId: string, ip: string): Promise<void> {
+    if (!this.cache) return;
     await this.cache.set(`risk:user:${userId}:last-ip`, ip, { EX: 86400 });
   }
 
   async getLastIp(userId: string): Promise<string | null> {
-    return this.cache.get(`risk:user:${userId}:last-ip`);
+    return this.cache?.get(`risk:user:${userId}:last-ip`) ?? null;
   }
 
   /**
@@ -50,6 +54,7 @@ export class RiskMemoryService {
    * This creates a short-lived trust window bound to context (IP + device).
    */
   async markStepUpVerified(userId: string, context: StepUpContext): Promise<void> {
+    if (!this.cache) return;
     const key = this.buildStepUpKey(userId, context);
 
     const payload = {
@@ -68,6 +73,7 @@ export class RiskMemoryService {
    * Checks whether a valid step-up verification exists for the given context.
    */
   async isStepUpValid(userId: string, context: StepUpContext): Promise<boolean> {
+    if (!this.cache) return false;
     const key = this.buildStepUpKey(userId, context);
     const raw = await this.cache.get(key);
 
@@ -100,6 +106,7 @@ export class RiskMemoryService {
    * Optional: clear step-up state manually
    */
   async clearStepUp(userId: string, context: StepUpContext): Promise<void> {
+    if (!this.cache) return;
     const key = this.buildStepUpKey(userId, context);
     await this.cache.del(key);
   }

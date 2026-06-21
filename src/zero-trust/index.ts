@@ -6,3 +6,4 @@ export * from './error/index.js';
 export * from './device/index.js';
 export * from './policy/index.js';
 export * from './risk/index.js';
+export * from './zero-trust.module.js';

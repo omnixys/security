@@ -10,6 +10,8 @@ export interface SecurityJwtOptions {
   issuer: string;
   jwksUri: string;
   audience?: string;
+  /** Name of the tenant claim accepted after JWT verification. */
+  tenantClaim?: string;
 }
 
 export interface SecuritySessionOptions {
@@ -28,6 +30,11 @@ export interface SecurityCookieOptions {
   domain?: string;
   secure?: boolean;
   sameSite?: 'lax' | 'strict' | 'none';
+  path?: string;
+  accessTokenName?: string;
+  refreshTokenName?: string;
+  accessTokenMaxAgeMs?: number;
+  refreshTokenMaxAgeMs?: number;
 }
 
 export interface RevocationStore {

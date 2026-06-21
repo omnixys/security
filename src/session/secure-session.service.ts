@@ -1,21 +1,46 @@
+import { SessionExpiredException } from '../errors/security.exception.js';
 import { JweService } from '../jwe/core/jwe.service.js';
 import { SECURITY_OPTIONS } from '../security.constants.js';
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, Optional } from '@nestjs/common';
+import { OmnixysLogger } from '@omnixys/logger';
+import { randomUUID } from 'node:crypto';
+
+export interface SessionMetadata {
+  readonly sessionId: string;
+  readonly issuedAtEpochMs: number;
+  readonly expiresAtEpochMs: number;
+  readonly authenticatedAtEpochMs: number;
+  readonly authStrength?: string;
+}
+
+export interface SessionIssueOptions {
+  readonly sessionId?: string;
+  readonly authenticatedAtEpochMs?: number;
+  readonly authStrength?: string;
+}
 
 @Injectable()
 export class SecureSessionService {
   constructor(
     private readonly jwe: JweService,
     @Inject(SECURITY_OPTIONS) private readonly options: any,
+    @Optional() private readonly logger?: OmnixysLogger,
   ) {}
 
-  async issue<T extends Record<string, unknown>>(payload: T): Promise<string> {
+  async issue<T extends Record<string, unknown>>(
+    payload: T,
+    metadata: SessionIssueOptions = {},
+  ): Promise<string> {
     const ttl = this.options.session?.ttlMs ?? 1000 * 60 * 60;
+    const issuedAtEpochMs = Date.now();
 
     return this.jwe.encrypt({
       ...payload,
-      iat: Date.now(),
-      exp: Date.now() + ttl,
+      sid: metadata.sessionId ?? randomUUID(),
+      iat: issuedAtEpochMs,
+      exp: issuedAtEpochMs + ttl,
+      authenticatedAtEpochMs: metadata.authenticatedAtEpochMs ?? issuedAtEpochMs,
+      authStrength: metadata.authStrength,
     });
   }
 
@@ -23,9 +48,45 @@ export class SecureSessionService {
     const data = await this.jwe.decrypt<any>(token);
 
     if (data.exp && Date.now() > data.exp) {
-      throw new Error('Session expired');
+      this.logger?.child(SecureSessionService.name).warn('Session read rejected', {
+        reason: 'expired',
+      });
+      throw new SessionExpiredException();
     }
 
     return data;
+  }
+
+  async metadata(token: string): Promise<SessionMetadata> {
+    const data = await this.read<{
+      sid?: unknown;
+      iat?: unknown;
+      exp?: unknown;
+      authenticatedAtEpochMs?: unknown;
+      authStrength?: unknown;
+    }>(token);
+
+    if (
+      typeof data.sid !== 'string' ||
+      typeof data.iat !== 'number' ||
+      typeof data.exp !== 'number'
+    ) {
+      throw new InvalidSessionMetadataException();
+    }
+
+    return {
+      sessionId: data.sid,
+      issuedAtEpochMs: data.iat,
+      expiresAtEpochMs: data.exp,
+      authenticatedAtEpochMs:
+        typeof data.authenticatedAtEpochMs === 'number' ? data.authenticatedAtEpochMs : data.iat,
+      authStrength: typeof data.authStrength === 'string' ? data.authStrength : undefined,
+    };
+  }
+}
+
+class InvalidSessionMetadataException extends SessionExpiredException {
+  constructor() {
+    super('Session metadata is invalid', { reason: 'invalid_session_metadata' });
   }
 }

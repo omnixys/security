@@ -1,6 +1,10 @@
+import { InvalidCredentialsException } from '../../errors/security.exception.js';
+import type { SecurityJwtOptions } from '../../types/security.types.js';
+import { SecurityPrincipalResolver } from '../context/security-principal.resolver.js';
 import { extractUserRoles } from '../utils/extract-roles.util.js';
-import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
+import { Inject, Injectable, Optional } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
+import { OmnixysLogger } from '@omnixys/logger';
 import jwksRsa from 'jwks-rsa';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 
@@ -8,11 +12,11 @@ import { ExtractJwt, Strategy } from 'passport-jwt';
 export class JwtStrategy extends PassportStrategy(Strategy) {
   constructor(
     @Inject('JWT_OPTIONS')
-    private readonly options: {
-      issuer: string;
-      jwksUri: string;
-      audience?: string;
-    },
+    private readonly options: SecurityJwtOptions,
+    @Optional()
+    private readonly principalResolver: SecurityPrincipalResolver = new SecurityPrincipalResolver(),
+    @Optional()
+    private readonly logger?: OmnixysLogger,
   ) {
     super({
       algorithms: ['RS256'],
@@ -31,12 +35,30 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   }
 
   async validate(payload: any) {
+    const roles = extractUserRoles(payload);
+    const contextPrincipal = this.principalResolver.fromVerifiedJwt(
+      payload,
+      roles,
+      this.options.tenantClaim,
+    );
+    if (!contextPrincipal) {
+      this.logger
+        ?.child(JwtStrategy.name)
+        .warn('Verified token has no subject', {
+          reason: 'missing_subject',
+        });
+      throw new InvalidCredentialsException('Verified token has no subject', {
+        reason: 'missing_subject',
+      });
+    }
+
     return {
       id: payload.sub,
       username: payload.preferred_username,
       email: payload.email,
-      roles: extractUserRoles(payload),
+      roles,
       raw: payload,
+      contextPrincipal,
     };
   }
 }

@@ -8,6 +8,9 @@ import { SECURITY_OPTIONS } from './security.constants.js';
 import type { SecurityModuleOptions } from './types/security.types.js';
 
 import { CookieService } from './cookie/cookie.service.js';
+import { TokenCookieService } from './cookie/token-cookie.service.js';
+import { SecurityAuditService } from './distributed/audit.service.js';
+import { TokenRevocationService } from './distributed/revocation.service.js';
 import { RateLimitService } from './rate-limit/rate-limit.service.js';
 import { SecureSessionService } from './session/secure-session.service.js';
 
@@ -18,8 +21,6 @@ import { RateLimitGuard } from './rate-limit/rate-limit.guard.js';
 import { ZeroTrustGuard } from './zero-trust/core/zero-trust.guard.js';
 import { FingerprintService } from './zero-trust/index.js';
 import { ZeroTrustModule } from './zero-trust/zero-trust.module.js';
-import { ObservabilityModule } from '@omnixys/observability';
-import { Hash } from 'node:crypto';
 
 @Global()
 @Module({})
@@ -34,6 +35,7 @@ export class SecurityModule {
       SecureSessionService,
       RateLimitService,
       CookieService,
+      TokenCookieService,
       FingerprintService,
       {
         provide: 'FINGERPRINT_SECRET',
@@ -48,12 +50,21 @@ export class SecurityModule {
         provide: 'REVOCATION_STORE',
         useValue: options.distributed.revocationStore,
       });
+      distributedProviders.push(TokenRevocationService);
     }
 
     if (options.distributed?.auditProducer) {
       distributedProviders.push({
         provide: 'AUDIT_PRODUCER',
         useValue: options.distributed.auditProducer,
+      });
+      distributedProviders.push(SecurityAuditService);
+    }
+
+    if (options.rateLimit?.rateLimitStore) {
+      providers.push({
+        provide: 'RATE_LIMIT_STORE',
+        useValue: options.rateLimit.rateLimitStore,
       });
     }
 
@@ -72,12 +83,9 @@ export class SecurityModule {
     return {
       module: SecurityModule,
       imports: [
-        ObservabilityModule,
         AuthModule.forRoot(options.jwt),
         JweModule.forRoot(options.jwe || { keys: [] }),
-        ZeroTrustModule.forRoot(
-          options?.zeroTrust || { device: null as any, riskMemoryStore: null as any },
-        ),
+        ZeroTrustModule.forRoot(options.zeroTrust ?? {}),
         HashModule.forRoot(options?.hash || {}),
         ...(options?.rateLimit?.imports ?? []),
       ],
@@ -88,7 +96,10 @@ export class SecurityModule {
         SecureSessionService,
         RateLimitService,
         CookieService,
+        TokenCookieService,
         FingerprintService,
+        ...(options.distributed?.revocationStore ? [TokenRevocationService] : []),
+        ...(options.distributed?.auditProducer ? [SecurityAuditService] : []),
       ],
     };
   }

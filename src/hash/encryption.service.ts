@@ -1,23 +1,26 @@
 import { HashOptions } from '../types/security.types.js';
-import { Inject, Injectable, Logger, Optional } from '@nestjs/common';
+import { Inject, Injectable, Optional } from '@nestjs/common';
+import { OmnixysLogger } from '@omnixys/logger';
 import { createCipheriv, createDecipheriv, randomBytes } from 'crypto';
 
 @Injectable()
 export class EncryptionService {
-  private readonly logger = new Logger(EncryptionService.name);
   private readonly key?: Buffer;
   private readonly enabled: boolean;
 
   constructor(
     @Optional()
     @Inject('HASH_OPTIONS')
-    readonly options: HashOptions,
+    readonly options: HashOptions = {},
+    @Optional() private readonly logger?: OmnixysLogger,
   ) {
     const keyTmp = options?.encryptionKey;
 
     if (!keyTmp) {
       this.enabled = false;
-      this.logger.warn('EncryptionService disabled: no encryptionKey provided');
+      this.logger
+        ?.child(EncryptionService.name)
+        .warn('Encryption service is disabled', { reason: 'missing_key' });
       return;
     }
 
@@ -79,7 +82,10 @@ export class EncryptionService {
       const decrypted = Buffer.concat([decipher.update(encrypted), decipher.final()]);
 
       return decrypted.toString('utf8');
-    } catch (err) {
+    } catch {
+      this.logger?.child(EncryptionService.name).warn('Decryption rejected', {
+        reason: 'invalid_payload_or_key',
+      });
       throw new Error('Decryption failed: invalid payload or key');
     }
   }

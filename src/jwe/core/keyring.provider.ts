@@ -1,4 +1,5 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Optional } from '@nestjs/common';
+import { OmnixysLogger } from '@omnixys/logger';
 
 export interface JweKey {
   kid: string;
@@ -7,14 +8,18 @@ export interface JweKey {
 
 @Injectable()
 export class KeyringProvider {
-  private readonly logger = new Logger(KeyringProvider.name);
   private readonly keys: JweKey[] = [];
   private readonly enabled: boolean;
 
-  constructor(keys?: JweKey[]) {
+  constructor(
+    keys?: JweKey[],
+    @Optional() private readonly logger?: OmnixysLogger,
+  ) {
     if (!keys || keys.length === 0) {
       this.enabled = false;
-      this.logger.warn('KeyringProvider disabled: no keys configured');
+      this.logger?.child(KeyringProvider.name).warn('JWE keyring is disabled', {
+        reason: 'missing_keys',
+      });
       return;
     }
 

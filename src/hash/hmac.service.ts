@@ -2,22 +2,22 @@
  * @license GPL-3.0-or-later
  */
 
-import { HashOptions, SecurityModuleOptions } from '../types/security.types.js';
-import { Inject, Injectable, Logger, Optional } from '@nestjs/common';
+import { HashOptions } from '../types/security.types.js';
+import { Inject, Injectable, Optional } from '@nestjs/common';
+import { OmnixysLogger } from '@omnixys/logger';
 import { createHmac, timingSafeEqual } from 'crypto';
 
 type HmacPurpose = 'resetToken' | 'deviceFingerprint' | 'magicLink';
 
 @Injectable()
 export class HmacService {
-  private readonly logger = new Logger(HmacService.name);
-
   private readonly keys: Partial<Record<HmacPurpose, Buffer>> = {};
 
   constructor(
     @Optional()
     @Inject('HASH_OPTIONS')
-    readonly hashOption: HashOptions,
+    readonly hashOption: HashOptions = {},
+    @Optional() private readonly logger?: OmnixysLogger,
   ) {
     this.initKey('resetToken', hashOption.hmacResetToken, 'RESET_TOKEN_HMAC_SECRET');
     this.initKey(
@@ -30,7 +30,10 @@ export class HmacService {
 
   private initKey(purpose: HmacPurpose, raw: string | undefined, name: string): void {
     if (!raw || raw.length < 32) {
-      this.logger.warn(`${name} not configured → ${purpose} disabled`);
+      this.logger?.child(HmacService.name).warn('HMAC purpose is disabled', {
+        configurationName: name,
+        purpose,
+      });
       return;
     }
 

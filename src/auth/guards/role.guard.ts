@@ -4,14 +4,19 @@ import {
   type ExecutionContext,
   ForbiddenException,
   Injectable,
+  Optional,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { getRequest } from '@omnixys/context';
+import { OmnixysLogger } from '@omnixys/logger';
 import type { RealmRoleType } from '@omnixys/shared';
 
 @Injectable()
 export class RoleGuard implements CanActivate {
-  constructor(private readonly reflector: Reflector) {}
+  constructor(
+    private readonly reflector: Reflector,
+    @Optional() private readonly logger?: OmnixysLogger,
+  ) {}
 
   canActivate(context: ExecutionContext): boolean {
     const requiredRoles =
@@ -29,6 +34,10 @@ export class RoleGuard implements CanActivate {
     const user = req.user;
 
     if (!user) {
+      this.logger?.child(RoleGuard.name).warn('Role authorization denied', {
+        reason: 'unauthenticated',
+        requiredRoles,
+      });
       throw new ForbiddenException('User not authenticated');
     }
 
@@ -37,6 +46,10 @@ export class RoleGuard implements CanActivate {
     const allowed = requiredRoles.some((role) => roles.includes(role));
 
     if (!allowed) {
+      this.logger?.child(RoleGuard.name).warn('Role authorization denied', {
+        reason: 'missing_role',
+        requiredRoles,
+      });
       throw new ForbiddenException('Insufficient permissions');
     }
 

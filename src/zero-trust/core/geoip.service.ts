@@ -61,26 +61,6 @@ export class GeoIpService {
   // Provider: ip-api (FREE, no key)
   // ------------------------------
   private async lookupIpApi(ip: string): Promise<GeoIpResult> {
-    if (ip === '127.0.0.1') {
-      return {
-        status: 'success',
-        country: 'Germany',
-        countryCode: 'DE',
-        region: 'BW',
-        regionName: 'Baden-Wurttemberg',
-        city: 'Stuttgart',
-        zip: '70376',
-        lat: 48.767,
-        lon: 9.1827,
-        timezone: 'Europe/Berlin',
-        isp: 'Deutsche Telekom AG',
-        org: 'Deutsche Telekom AG',
-        as: 'AS3320 Deutsche Telekom AG',
-        query: ip,
-        ip,
-      };
-    }
-
     const url = `http://ip-api.com/json/${ip}`;
 
     const res = await firstValueFrom(this.http.get(url, { timeout: this.timeout }));

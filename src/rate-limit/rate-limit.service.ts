@@ -1,6 +1,7 @@
 import { SECURITY_OPTIONS } from '../security.constants.js';
 import { RateLimitStore } from './rate-limit.store.js';
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, Optional } from '@nestjs/common';
+import { OmnixysLogger } from '@omnixys/logger';
 import { CacheObservabilityService } from '@omnixys/observability';
 
 export interface RateLimitResult {
@@ -10,18 +11,32 @@ export interface RateLimitResult {
   resetAt?: number; // epoch ms
 }
 
+interface AttributeSpan {
+  setAttribute(name: string, value: string | number | boolean): unknown;
+}
+
 @Injectable()
 export class RateLimitService {
   constructor(
     @Inject(SECURITY_OPTIONS) private readonly options: any,
+    @Optional()
     @Inject('RATE_LIMIT_STORE')
-    readonly cache: RateLimitStore,
-    private readonly observability: CacheObservabilityService,
+    readonly cache?: RateLimitStore,
+    @Optional()
+    private readonly observability?: CacheObservabilityService,
+    @Optional()
+    private readonly logger?: OmnixysLogger,
   ) {}
 
   async isAllowed(key: string): Promise<RateLimitResult> {
-    return this.observability.trace('rate_limit.hit', key, async (span) => {
+    const operation = async (span?: AttributeSpan) => {
       if (!this.options.rateLimit?.enabled) return { allowed: true };
+      if (!this.cache) {
+        this.logger
+          ?.child(RateLimitService.name)
+          .error('Rate limiting store is not configured', { reason: 'missing_store' });
+        throw new Error('Rate limiting is enabled but no rateLimitStore is configured');
+      }
 
       const limit = this.options.rateLimit.defaultLimit ?? 100;
       const windowMs = this.options.rateLimit.defaultWindowMs ?? 60000;
@@ -48,7 +63,11 @@ export class RateLimitService {
       }
 
       if (!allowed) {
-        console.warn('RATE LIMIT');
+        this.logger?.child(RateLimitService.name).warn('Rate limit exceeded', {
+          key,
+          limit,
+          retryAfterSeconds: ttl > 0 ? ttl : windowSeconds,
+        });
         return {
           allowed,
           retryAfterSeconds: ttl > 0 ? ttl : windowSeconds,
@@ -62,6 +81,10 @@ export class RateLimitService {
         remaining,
         resetAt: Date.now() + (ttl > 0 ? ttl * 1000 : windowMs),
       };
-    });
+    };
+
+    return this.observability
+      ? this.observability.trace('rate_limit.hit', key, operation)
+      : operation(undefined);
   }
 }

@@ -14,6 +14,13 @@ export class ZeroTrustExceptionFilter implements ExceptionFilter {
 
     res.status(401).json({
       error: 'step_up_required',
+      code: exception.code,
+      message: exception.message,
+      requestId: exception.requestId,
+      correlationId: exception.correlationId,
+      traceId: exception.traceId,
+      actorId: exception.actorId,
+      tenantId: exception.tenantId,
       acr,
       reasons: exception.reasons,
     });
