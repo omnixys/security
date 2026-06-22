@@ -5,6 +5,7 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { ContextAccessor } from '@omnixys/context';
+import { ErrorCode } from '@omnixys/contracts';
 
 export interface SecurityErrorContext {
   readonly requestId: string;
@@ -24,7 +25,7 @@ export interface SecurityErrorDetails extends SecurityErrorContext {
 }
 
 export class InvalidCredentialsException extends UnauthorizedException {
-  readonly code = 'INVALID_CREDENTIALS';
+  readonly code = ErrorCode.INVALID_CREDENTIALS;
   readonly requestId!: string;
   readonly correlationId!: string;
   readonly traceId?: string;
@@ -36,14 +37,18 @@ export class InvalidCredentialsException extends UnauthorizedException {
     message = 'Invalid credentials',
     metadata: SecurityErrorMetadata = {},
   ) {
-    const details = errorDetails('INVALID_CREDENTIALS', message, metadata);
+    const details = errorDetails(
+      ErrorCode.INVALID_CREDENTIALS,
+      message,
+      metadata,
+    );
     super(details);
     Object.assign(this, details);
   }
 }
 
 export class RefreshTokenExpiredException extends UnauthorizedException {
-  readonly code = 'REFRESH_TOKEN_EXPIRED';
+  readonly code = ErrorCode.REFRESH_TOKEN_EXPIRED;
   readonly requestId!: string;
   readonly correlationId!: string;
   readonly traceId?: string;
@@ -55,14 +60,18 @@ export class RefreshTokenExpiredException extends UnauthorizedException {
     message = 'Refresh token has expired',
     metadata: SecurityErrorMetadata = {},
   ) {
-    const details = errorDetails('REFRESH_TOKEN_EXPIRED', message, metadata);
+    const details = errorDetails(
+      ErrorCode.REFRESH_TOKEN_EXPIRED,
+      message,
+      metadata,
+    );
     super(details);
     Object.assign(this, details);
   }
 }
 
 export class UnauthorizedTenantException extends ForbiddenException {
-  readonly code = 'UNAUTHORIZED_TENANT';
+  readonly code = ErrorCode.UNAUTHORIZED_TENANT;
   readonly requestId!: string;
   readonly correlationId!: string;
   readonly traceId?: string;
@@ -74,14 +83,18 @@ export class UnauthorizedTenantException extends ForbiddenException {
     message = 'Tenant access is not authorized',
     metadata: SecurityErrorMetadata = {},
   ) {
-    const details = errorDetails('UNAUTHORIZED_TENANT', message, metadata);
+    const details = errorDetails(
+      ErrorCode.UNAUTHORIZED_TENANT,
+      message,
+      metadata,
+    );
     super(details);
     Object.assign(this, details);
   }
 }
 
 export class SessionExpiredException extends UnauthorizedException {
-  readonly code = 'SESSION_EXPIRED';
+  readonly code = ErrorCode.SESSION_EXPIRED;
   readonly requestId!: string;
   readonly correlationId!: string;
   readonly traceId?: string;
@@ -93,7 +106,7 @@ export class SessionExpiredException extends UnauthorizedException {
     message = 'Session expired',
     metadata: SecurityErrorMetadata = {},
   ) {
-    const details = errorDetails('SESSION_EXPIRED', message, metadata);
+    const details = errorDetails(ErrorCode.SESSION_EXPIRED, message, metadata);
     super(details);
     Object.assign(this, details);
   }
@@ -104,8 +117,46 @@ export interface RateLimitExceededOptions {
   readonly message?: string;
 }
 
+export class AuthenticationRequiredException extends UnauthorizedException {
+  readonly code = ErrorCode.UNAUTHORIZED;
+  readonly requestId!: string;
+  readonly correlationId!: string;
+  readonly traceId?: string;
+  readonly actorId?: string;
+  readonly tenantId?: string;
+  readonly metadata!: SecurityErrorMetadata;
+
+  constructor(
+    message = 'Authentication is required',
+    metadata: SecurityErrorMetadata = {},
+  ) {
+    const details = errorDetails(ErrorCode.UNAUTHORIZED, message, metadata);
+    super(details);
+    Object.assign(this, details);
+  }
+}
+
+export class ForbiddenOperationException extends ForbiddenException {
+  readonly code = ErrorCode.FORBIDDEN;
+  readonly requestId!: string;
+  readonly correlationId!: string;
+  readonly traceId?: string;
+  readonly actorId?: string;
+  readonly tenantId?: string;
+  readonly metadata!: SecurityErrorMetadata;
+
+  constructor(
+    message = 'Operation is not authorized',
+    metadata: SecurityErrorMetadata = {},
+  ) {
+    const details = errorDetails(ErrorCode.FORBIDDEN, message, metadata);
+    super(details);
+    Object.assign(this, details);
+  }
+}
+
 export class RateLimitExceededException extends HttpException {
-  readonly code = 'RATE_LIMIT_EXCEEDED';
+  readonly code = ErrorCode.RATE_LIMIT_EXCEEDED;
   readonly requestId!: string;
   readonly correlationId!: string;
   readonly traceId?: string;
@@ -118,7 +169,7 @@ export class RateLimitExceededException extends HttpException {
     retryAfterSeconds = 3600,
     message = 'Too many requests',
   }: RateLimitExceededOptions = {}) {
-    const details = errorDetails('RATE_LIMIT_EXCEEDED', message, {
+    const details = errorDetails(ErrorCode.RATE_LIMIT_EXCEEDED, message, {
       retryAfterSeconds,
     });
     super(

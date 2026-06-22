@@ -1,15 +1,15 @@
+import { ForbiddenOperationException } from '../../errors/security.exception.js';
 import { ROLES_KEY } from '../decorators/roles.decorator.js';
 import {
   type CanActivate,
   type ExecutionContext,
-  ForbiddenException,
   Injectable,
   Optional,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { getRequest } from '@omnixys/context';
-import { OmnixysLogger } from '@omnixys/logger';
 import type { RealmRoleType } from '@omnixys/contracts';
+import { OmnixysLogger } from '@omnixys/logger';
 
 @Injectable()
 export class RoleGuard implements CanActivate {
@@ -38,7 +38,10 @@ export class RoleGuard implements CanActivate {
         reason: 'unauthenticated',
         requiredRoles,
       });
-      throw new ForbiddenException('User not authenticated');
+      throw new ForbiddenOperationException('User not authenticated', {
+        reason: 'unauthenticated',
+        requiredRoles,
+      });
     }
 
     const roles = user.roles ?? [];
@@ -50,7 +53,10 @@ export class RoleGuard implements CanActivate {
         reason: 'missing_role',
         requiredRoles,
       });
-      throw new ForbiddenException('Insufficient permissions');
+      throw new ForbiddenOperationException('Insufficient permissions', {
+        reason: 'missing-role',
+        requiredRoles,
+      });
     }
 
     return true;

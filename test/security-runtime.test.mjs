@@ -1,4 +1,6 @@
 import {
+  AuthenticationRequiredException,
+  ForbiddenOperationException,
   GeoIpService,
   RateLimitExceededException,
   RateLimitService,
@@ -61,6 +63,25 @@ test('maps expired sessions to a structured compatibility exception', async () =
     assert.equal(error.requestId, 'unscoped');
     return true;
   });
+});
+
+test('authorization failures expose stable transport-independent codes', () => {
+  ContextAccessor.run(
+    { requestId: 'request-auth', correlationId: 'correlation-auth' },
+    () => {
+      const unauthorized = new AuthenticationRequiredException();
+      const forbidden = new ForbiddenOperationException(undefined, {
+        reason: 'missing-role',
+      });
+
+      assert.equal(unauthorized.code, 'UNAUTHORIZED');
+      assert.equal(unauthorized.getStatus(), 401);
+      assert.equal(unauthorized.requestId, 'request-auth');
+      assert.equal(forbidden.code, 'FORBIDDEN');
+      assert.equal(forbidden.getStatus(), 403);
+      assert.deepEqual(forbidden.metadata, { reason: 'missing-role' });
+    },
+  );
 });
 
 test('risk memory has safe behavior when no optional store is configured', async () => {
