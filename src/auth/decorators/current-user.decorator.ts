@@ -4,6 +4,7 @@ import type { AuthUser } from '../types/auth-user.type.js';
 import { createParamDecorator, type ExecutionContext } from '@nestjs/common';
 import { getRequest } from '@omnixys/context';
 import type { RealmRoleType } from '@omnixys/contracts';
+import type { FastifyRequest } from 'fastify';
 
 export interface CurrentUserData {
   id: string;
@@ -19,30 +20,38 @@ export interface CurrentUserData {
   raw: AuthUser;
 }
 
+/**
+ * Maps a verified Fastify principal into the stable resolver-facing shape.
+ * Cookies are optional at runtime because bearer-authenticated and non-HTTP
+ * transports do not necessarily install the Fastify cookie plugin.
+ */
+export function resolveCurrentUser(
+  req: FastifyRequest | null | undefined,
+): CurrentUserData | null {
+  if (!req?.user) {
+    return null;
+  }
+
+  const user = req.user;
+  const userInfo = user.raw;
+  const roles = extractUserRoles(user.raw);
+  const role = resolvePrimaryRole(roles);
+
+  return {
+    id: user.sub ?? userInfo.sub,
+    username: user.preferred_username ?? userInfo.preferred_username,
+    email: user.email,
+    firstName: user.given_name ?? userInfo.given_name,
+    lastName: user.family_name ?? userInfo.family_name,
+    role,
+    access_token: req.cookies?.access_token,
+    refresh_token: req.cookies?.refresh_token,
+    raw: user,
+  };
+}
+
 export const CurrentUser = createParamDecorator(
   (_data: unknown, context: ExecutionContext): CurrentUserData | null => {
-    const req = getRequest(context);
-
-    if (!req || !req?.user) {
-      return null;
-    }
-
-    const user = req.user;
-    const userInfo = user.raw;
-
-    const roles = extractUserRoles(user.raw);
-    const role = resolvePrimaryRole(roles);
-
-    return {
-      id: user.sub ?? userInfo.sub,
-      username: user.preferred_username ?? userInfo.preferred_username,
-      email: user.email,
-      firstName: user.given_name ?? userInfo.given_name,
-      lastName: user.family_name ?? userInfo.family_name,
-      role,
-      access_token: req.cookies.access_token,
-      refresh_token: req.cookies.refresh_token,
-      raw: user,
-    };
+    return resolveCurrentUser(getRequest(context));
   },
 );

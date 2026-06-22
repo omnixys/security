@@ -1,6 +1,7 @@
 import {
   InvalidCredentialsException,
   JwtStrategy,
+  resolveCurrentUser,
   SecurityPrincipalResolver,
   UnauthorizedTenantException,
 } from '../dist/index.js';
@@ -148,4 +149,26 @@ test('JwtStrategy rejects a verified token without a principal subject', async (
     strategy.validate({ realm_access: { roles: [] } }),
     InvalidCredentialsException,
   );
+});
+
+test('CurrentUser supports bearer-authenticated requests without cookies', () => {
+  const raw = {
+    sub: 'subject-1',
+    preferred_username: 'tester',
+    email: 'tester@example.com',
+    given_name: 'Test',
+    family_name: 'User',
+    realm_access: { roles: ['USER'] },
+  };
+  const current = resolveCurrentUser({
+    user: {
+      ...raw,
+      raw,
+    },
+  });
+
+  assert.equal(current.id, 'subject-1');
+  assert.equal(current.username, 'tester');
+  assert.equal(current.access_token, undefined);
+  assert.equal(current.refresh_token, undefined);
 });
