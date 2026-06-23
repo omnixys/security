@@ -2,9 +2,9 @@
  * @license GPL-3.0-or-later
  */
 
-import { DEVICE_STORE } from '../security.constants.js';
+import { DEVICE_STORE, DEVICE_TRUST_TTL_SECONDS, GEOIP_PROVIDER } from '../security.constants.js';
 import { ZeroTrustOptions } from '../types/security.types.js';
-import { GeoIpService } from './core/geoip.service.js';
+import { DEFAULT_GEOIP_OPTIONS, GeoIpService, type GeoIpServiceOptions } from './core/geoip.service.js';
 import { ZeroTrustGuard } from './core/zero-trust.guard.js';
 import { ZeroTrustService } from './core/zero-trust.service.js';
 import { DeviceService } from './device/device.service.js';
@@ -38,6 +38,18 @@ export class ZeroTrustModule {
       storeExports.push('RISK_MEMORY_STORE');
     }
 
+    const geoipOptions: GeoIpServiceOptions = {
+      ...DEFAULT_GEOIP_OPTIONS,
+      ...options.geoip,
+      provider: (options.geoip?.provider ??
+        process.env.GEOIP_PROVIDER ??
+        DEFAULT_GEOIP_OPTIONS.provider) as 'ip-api' | 'ipinfo',
+      ipinfoToken: options.geoip?.ipinfoToken ?? process.env.IPINFO_TOKEN,
+    };
+
+    const deviceTrustTtl =
+      options.deviceTrustTtlSeconds ?? Number(process.env.DEVICE_TRUST_TTL ?? 60 * 60 * 24 * 30);
+
     return {
       module: ZeroTrustModule,
       imports: [HttpModule, ...(options.imports ?? [])],
@@ -52,6 +64,10 @@ export class ZeroTrustModule {
         GeoIpService,
         PolicyService,
         RiskMemoryService,
+
+        // Config providers
+        { provide: GEOIP_PROVIDER, useValue: geoipOptions },
+        { provide: DEVICE_TRUST_TTL_SECONDS, useValue: deviceTrustTtl },
         ...storeProviders,
       ],
       exports: [

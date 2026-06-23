@@ -1,6 +1,7 @@
 import type { SecurityJwtOptions } from '../types/security.types.js';
 import { SecurityPrincipalResolver } from './context/security-principal.resolver.js';
 import { CookieAuthGuard } from './guards/cookie-auth.guard.js';
+import { EventRoleGuard } from './guards/event-role.guard.js';
 import { HeaderAuthGuard } from './guards/header-auth.guard.js';
 import { RoleGuard } from './guards/role.guard.js';
 import { JwtStrategy } from './jwt/jwt.strategy.js';
@@ -29,11 +30,13 @@ export class AuthModule {
         HeaderAuthGuard,
         CookieAuthGuard,
         RoleGuard,
+        EventRoleGuard,
       ],
       exports: [
         PassportModule,
         HeaderAuthGuard,
         CookieAuthGuard,
+        EventRoleGuard,
         RoleGuard,
         JwtStrategy,
         SecurityPrincipalResolver,

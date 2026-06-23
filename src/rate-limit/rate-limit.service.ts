@@ -17,6 +17,8 @@ interface AttributeSpan {
 
 @Injectable()
 export class RateLimitService {
+    private readonly logger;
+
   constructor(
     @Inject(SECURITY_OPTIONS) private readonly options: any,
     @Optional()
@@ -25,16 +27,17 @@ export class RateLimitService {
     @Optional()
     private readonly observability?: CacheObservabilityService,
     @Optional()
-    private readonly logger?: OmnixysLogger,
-  ) {}
+    private readonly loggerService?: OmnixysLogger,
+  ) {
+    this.logger = this.loggerService?.log(RateLimitService.name);
+  }
 
   async isAllowed(key: string): Promise<RateLimitResult> {
+    this.logger?.debug('RateLimit key=%s', key);
     const operation = async (span?: AttributeSpan) => {
       if (!this.options.rateLimit?.enabled) return { allowed: true };
       if (!this.cache) {
-        this.logger
-          ?.child(RateLimitService.name)
-          .error('Rate limiting store is not configured', { reason: 'missing_store' });
+        this.logger?.error('Rate limiting store is not configured', { reason: 'missing_store' });
         throw new Error('Rate limiting is enabled but no rateLimitStore is configured');
       }
 
@@ -44,11 +47,26 @@ export class RateLimitService {
 
       const current = await this.cache.incr(key);
 
+      this.logger?.debug(
+  'RateLimit current=%d limit=%d key=%s',
+  current,
+  limit,
+  key,
+);
+
       if (current === 1) {
         await this.cache.expire(key, windowSeconds);
       }
 
       const ttl = await this.cache.ttl(key);
+
+      this.logger?.debug(
+  'key=%s current=%d ttl=%d',
+  key,
+  current,
+  ttl,
+);
+
       const remaining = Math.max(limit - current, 0);
       const allowed = current <= limit;
 

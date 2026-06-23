@@ -179,12 +179,15 @@ test('rate-limit errors retain the compatibility response and canonical diagnost
 
 test('localhost GeoIP never fabricates production location metadata', async () => {
   const requests = [];
-  const service = new GeoIpService({
-    get(url) {
-      requests.push(url);
-      return throwError(() => new Error('offline'));
+  const service = new GeoIpService(
+    {
+      get(url) {
+        requests.push(url);
+        return throwError(() => new Error('offline'));
+      },
     },
-  });
+    { provider: 'ip-api' },
+  );
 
   assert.deepEqual(await service.lookup('127.0.0.1'), { ip: '127.0.0.1' });
   assert.deepEqual(requests, ['http://ip-api.com/json/127.0.0.1']);

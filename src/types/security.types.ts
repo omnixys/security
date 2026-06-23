@@ -42,8 +42,15 @@ export interface RevocationStore {
   exists(key: string): Promise<boolean>;
 }
 
+export interface GeoIpOptions {
+  provider?: 'ip-api' | 'ipinfo';
+  ipinfoToken?: string;
+}
+
 export interface ZeroTrustOptions {
   device?: DeviceStore;
+  deviceTrustTtlSeconds?: number;
+  geoip?: GeoIpOptions;
   riskMemoryStore?: RiskMemoryStore;
   imports?: any[];
 }

@@ -6,3 +6,6 @@ export const JWE_STORE = Symbol('JWE_STORE');
 export const RATE_LIMIT_STORE = Symbol('RATE_LIMIT_STORE');
 export const DEVICE_STORE = Symbol('DEVICE_STORE');
 export const FINGERPRINT_SECRET = Symbol('FINGERPRINT_SECRET');
+
+export const GEOIP_PROVIDER = Symbol('GEOIP_PROVIDER');
+export const DEVICE_TRUST_TTL_SECONDS = Symbol('DEVICE_TRUST_TTL_SECONDS');

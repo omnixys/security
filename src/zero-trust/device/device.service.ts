@@ -5,20 +5,19 @@
 import { HmacService } from '../../hash/hmac.service.js';
 import { DeviceStore } from './device.store.js';
 import { Inject, Injectable, Optional } from '@nestjs/common';
+import { DEVICE_TRUST_TTL_SECONDS } from '../../security.constants.js';
 import * as fastify from 'fastify';
 
 @Injectable()
 export class DeviceService {
-  private readonly ttlSeconds: number;
-
   constructor(
     private readonly hmac: HmacService,
+    @Inject(DEVICE_TRUST_TTL_SECONDS)
+    private readonly ttlSeconds: number,
     @Optional()
     @Inject('DEVICE_STORE')
     private readonly store?: DeviceStore,
-  ) {
-    this.ttlSeconds = Number(process.env.DEVICE_TRUST_TTL ?? 60 * 60 * 24 * 30);
-  }
+  ) {}
 
   /**
    * Privacy-safe fingerprint hashing via HMAC.

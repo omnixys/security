@@ -35,11 +35,11 @@ export class ZeroTrustGuard implements CanActivate {
 
     const result = await this.zeroTrust.evaluate({
       userId: canonical?.principal?.userId ?? user.id,
-      ip: canonical?.client.ip ?? req.ip,
-      userAgent: canonical?.client.userAgent ?? req.headers['user-agent'],
+      ip: canonical?.client?.ip ?? req?.ip,
+      userAgent: canonical?.client?.userAgent ?? req?.headers?.['user-agent'],
       acceptLanguage:
-        canonical?.client.locale ?? req.headers['accept-language'],
-      clientDeviceId: canonical?.client.deviceId ?? req.cookies?.device_id,
+        canonical?.client?.locale ?? req?.headers?.['accept-language'],
+      clientDeviceId: canonical?.client?.deviceId ?? req?.cookies?.device_id,
       isPasswordless: false,
       isResetFlow: false,
     });

@@ -3,8 +3,9 @@
  */
 
 import { HttpService } from '@nestjs/axios';
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { firstValueFrom } from 'rxjs';
+import { GEOIP_PROVIDER } from '../../security.constants.js';
 
 export interface GeoIpResult {
   status?: string;
@@ -30,22 +31,30 @@ export interface GeoIpResult {
   readme?: string;
 }
 
-type Provider = 'ip-api' | 'ipinfo';
+export interface GeoIpServiceOptions {
+  provider: 'ip-api' | 'ipinfo';
+  ipinfoToken?: string;
+}
+
+export const DEFAULT_GEOIP_OPTIONS: GeoIpServiceOptions = {
+  provider: 'ip-api',
+};
 
 @Injectable()
 export class GeoIpService {
-  private readonly provider: Provider;
   private readonly timeout = 800;
 
-  constructor(private readonly http: HttpService) {
-    this.provider = (process.env.GEOIP_PROVIDER as Provider) ?? 'ip-api';
-  }
+  constructor(
+    private readonly http: HttpService,
+    @Inject(GEOIP_PROVIDER)
+    private readonly options: GeoIpServiceOptions,
+  ) {}
 
   async lookup(ip: string | undefined): Promise<GeoIpResult | null> {
     if (!ip) return null;
 
     try {
-      switch (this.provider) {
+      switch (this.options.provider) {
         case 'ipinfo':
           return await this.lookupIpInfo(ip);
         case 'ip-api':
@@ -81,7 +90,7 @@ export class GeoIpService {
   // Provider: ipinfo (FREE tier)
   // ------------------------------
   private async lookupIpInfo(ip: string): Promise<GeoIpResult> {
-    const token = process.env.IPINFO_TOKEN;
+    const token = this.options.ipinfoToken;
     const url = `https://ipinfo.io/${ip}/json`;
 
     const res = await firstValueFrom(
