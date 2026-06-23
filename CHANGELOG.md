@@ -3,6 +3,20 @@
 All notable changes in this project will be documented in this file.
 
 
+## [2.0.0](https://github.com/omnixys/security/compare/v1.0.0...v2.0.0) (2026-06-23)
+
+### Other
+
+* **Other:** Merge branch 'main' of https://github.com/omnixys/security ([](https://github.com/omnixys/security/commit/83890ebb1f80793c688a5effb920620cd538c6c0))
+
+### Security
+
+* **Security:** inject runtime configuration through providers ([](https://github.com/omnixys/security/commit/a2dc6c194c884b71dc15485c1ffa7b5deafa28c7))
+* **Security:** expose canonical authorization errors ([](https://github.com/omnixys/security/commit/13ee1772a97b7bfc8da3259590843fce74df313e))
+* **Security:** harden canonical principal and session handling ([](https://github.com/omnixys/security/commit/3d5f1017373bbd904b52d3f82ed8d9cdb5c5b822))
+* **Security:** support bearer principals without cookies ([](https://github.com/omnixys/security/commit/90b53b0f19ecfb1b8a7989668d103de26b8d7ac0))
+* **Security:** own authentication and rate-limit contracts ([](https://github.com/omnixys/security/commit/974dcb98ef6b25cdb3f20cf751b601e44ef469fb))
+
 ## 1.0.0 (2026-04-25)
 
 ### ⚠ BREAKING CHANGE
