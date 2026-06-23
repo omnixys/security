@@ -73,6 +73,7 @@
     "@nestjs/common": "latest",
     "@nestjs/core": "^11.1.17",
     "@nestjs/graphql": "^13.2.4",
+    "@nestjs/testing": "^11.1.27",
     "@omnixys/context": "^2.0.0",
     "@omnixys/contracts": "^2.0.0",
     "@omnixys/logger": "^2.0.0",
