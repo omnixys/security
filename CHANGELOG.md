@@ -3,6 +3,16 @@
 All notable changes in this project will be documented in this file.
 
 
+## [2.0.1](https://github.com/omnixys/security/compare/v2.0.0...v2.0.1) (2026-06-23)
+
+### Other
+
+* **Other:** Merge branch 'main' of https://github.com/omnixys/security ([](https://github.com/omnixys/security/commit/8412491fa2fbeae29466e033243e4486e323f48f))
+
+### Security
+
+* **Security:** isolate event role providers into dedicated module ([](https://github.com/omnixys/security/commit/96c2b86894072313cf27f18db299eb9d741c2a2c))
+
 ## [2.0.0](https://github.com/omnixys/security/compare/v1.0.0...v2.0.0) (2026-06-23)
 
 ### Other
