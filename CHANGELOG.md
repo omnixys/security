@@ -3,6 +3,12 @@
 All notable changes in this project will be documented in this file.
 
 
+## [2.0.2](https://github.com/omnixys/security/compare/v2.0.1...v2.0.2) (2026-06-24)
+
+### EventRoleGuard
+
+* **EventRoleGuard:** optimize eventRoleGuard with better exception Handling ([](https://github.com/omnixys/security/commit/393fe070ebd654eb9e7bc75fd346261a54c2487d))
+
 ## [2.0.1](https://github.com/omnixys/security/compare/v2.0.0...v2.0.1) (2026-06-23)
 
 ### Other
