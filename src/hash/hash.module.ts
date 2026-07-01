@@ -2,7 +2,7 @@
  * @license GPL-3.0-or-later
  */
 
-import { HmacService } from '../hash/hmac.service.js';
+import { HmacService } from './hmac.service.js';
 import { HashOptions, ZeroTrustOptions } from '../types/security.types.js';
 import { EncryptionService } from './encryption.service.js';
 import { HashService } from './hash.service.js';
