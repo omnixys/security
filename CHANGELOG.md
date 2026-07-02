@@ -3,6 +3,12 @@
 All notable changes in this project will be documented in this file.
 
 
+## [2.0.3](https://github.com/omnixys/security/compare/v2.0.2...v2.0.3) (2026-07-01)
+
+### Path
+
+* **Path:** fix path ([](https://github.com/omnixys/security/commit/756176c7599871f4b58879e45a484e1807325a26))
+
 ## [2.0.2](https://github.com/omnixys/security/compare/v2.0.1...v2.0.2) (2026-06-24)
 
 ### EventRoleGuard
