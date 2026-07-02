@@ -13,14 +13,17 @@ import { OmnixysLogger } from '@omnixys/logger';
 
 @Injectable()
 export class RoleGuard implements CanActivate {
+  private readonly fallbackReflector = new Reflector();
+
   constructor(
-    private readonly reflector: Reflector,
+    @Optional() private readonly reflector: Reflector | undefined,
     @Optional() private readonly logger?: OmnixysLogger,
   ) {}
 
   canActivate(context: ExecutionContext): boolean {
+    const reflector = this.reflector ?? this.fallbackReflector;
     const requiredRoles =
-      this.reflector.getAllAndOverride<RealmRoleType[]>(ROLES_KEY, [
+      reflector.getAllAndOverride<RealmRoleType[]>(ROLES_KEY, [
         context.getHandler(),
         context.getClass(),
       ]) ?? [];

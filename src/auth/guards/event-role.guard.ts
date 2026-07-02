@@ -1,10 +1,17 @@
-import { Injectable, Logger, type CanActivate, type ExecutionContext } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  Optional,
+  type CanActivate,
+  type ExecutionContext,
+} from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 
 import { EventRoleType } from '@omnixys/contracts';
 import { getRequest } from '@omnixys/context';
 
 import { EventAccessDeniedException } from '../../errors/event-access-denied.exception.js';
+import { RESOLVED_EVENT_ID_REQUEST_KEY } from '../decorators/current-event-id.decorator.js';
 import { EVENT_ROLES_KEY } from '../decorators/event-roles.decorator.js';
 import { EventRoleResolver } from './event-role-resolver.js';
 import { extractEventId } from '../utils/extract-event-id.util.js';
@@ -12,15 +19,17 @@ import { extractEventId } from '../utils/extract-event-id.util.js';
 @Injectable()
 export class EventRoleGuard implements CanActivate {
   private readonly logger = new Logger(EventRoleGuard.name);
+  private readonly fallbackReflector = new Reflector();
 
   constructor(
-    private readonly reflector: Reflector,
+    @Optional() private readonly reflector: Reflector | undefined,
     private readonly resolver: EventRoleResolver,
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
+    const reflector = this.reflector ?? this.fallbackReflector;
     const requiredRoles =
-      this.reflector.getAllAndOverride<EventRoleType[]>(
+      reflector.getAllAndOverride<EventRoleType[]>(
         EVENT_ROLES_KEY,
         [context.getHandler(), context.getClass()],
       );
@@ -52,6 +61,10 @@ export class EventRoleGuard implements CanActivate {
         userId: user.id,
       });
     }
+
+    (req as unknown as Record<string, unknown>)[
+      RESOLVED_EVENT_ID_REQUEST_KEY
+    ] = eventId;
 
     const role = await this.resolver.getRoleForUser(
       user.id,
