@@ -3,6 +3,16 @@
 All notable changes in this project will be documented in this file.
 
 
+## [2.1.0](https://github.com/omnixys/security/compare/v2.0.3...v2.1.0) (2026-07-02)
+
+### EventRole
+
+* **EventRole:** add Event Role Guard ([](https://github.com/omnixys/security/commit/0271c628123ee6015805e351b24921b42b042c53))
+
+### Other
+
+* **Other:** Merge branch 'main' of https://github.com/omnixys/security ([](https://github.com/omnixys/security/commit/729a252f29126586c8e3226483173447b9b87e05))
+
 ## [2.0.3](https://github.com/omnixys/security/compare/v2.0.2...v2.0.3) (2026-07-01)
 
 ### Path
